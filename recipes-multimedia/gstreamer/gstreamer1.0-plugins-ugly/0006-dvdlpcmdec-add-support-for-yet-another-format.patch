@@ -1,0 +1,99 @@
+From 95e67eded5462eb1121d7431e9b2c3c0aa3c4d8c Mon Sep 17 00:00:00 2001
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Mon, 20 Jun 2016 14:32:35 +0200
+Subject: [PATCH 6/7] dvdlpcmdec: add support for yet another format
+
+This add support for the format described here:
+http://stnsoft.com/DVD/ass-hdr.html
+
+Like the 1394 format, it is transported in mpegts stream with stream_type
+0x83. The header is like the DVD format but with an extra frame count byte
+at the beginning.
+---
+ gst/dvdlpcmdec/gstdvdlpcmdec.c | 23 +++++++++++++++++++----
+ gst/dvdlpcmdec/gstdvdlpcmdec.h |  4 +++-
+ 2 files changed, 22 insertions(+), 5 deletions(-)
+
+diff --git a/gst/dvdlpcmdec/gstdvdlpcmdec.c b/gst/dvdlpcmdec/gstdvdlpcmdec.c
+index a402007..ba568c1 100644
+--- a/gst/dvdlpcmdec/gstdvdlpcmdec.c
++++ b/gst/dvdlpcmdec/gstdvdlpcmdec.c
+@@ -241,7 +241,7 @@ gst_dvdlpcmdec_set_format (GstAudioDecoder * bdec, GstCaps * caps)
+     goto done;
+   }
+   if (gst_structure_has_name (structure, "audio/x-private2-lpcm")) {
+-    dvdlpcmdec->mode = GST_LPCM_1394;
++    dvdlpcmdec->mode = GST_LPCM_AUTO;
+     goto done;
+   }
+ 
+@@ -358,14 +358,25 @@ gst_dvdlpcmdec_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
+   GstFlowReturn ret = GST_FLOW_OK;
+   gint off, len;
+ 
+-  if (dvdlpcmdec->mode != GST_LPCM_DVD)
++  if (dvdlpcmdec->mode == GST_LPCM_AUTO) {
++    gst_buffer_extract (buf, 0, data, 1);
++    if (data[0] == 0xa0)
++      dvdlpcmdec->mode = GST_LPCM_1394;
++    else
++      dvdlpcmdec->mode = GST_LPCM_DVD2;
++  }
++
++  if (dvdlpcmdec->mode != GST_LPCM_DVD && dvdlpcmdec->mode != GST_LPCM_DVD2)
+     return dvdlpcmdec->base_chain (pad, parent, buf);
+ 
+   size = gst_buffer_get_size (buf);
+   if (size < 5)
+     goto too_small;
+ 
+-  gst_buffer_extract (buf, 0, data, 2);
++  /* skip frame count byte */
++  off = dvdlpcmdec->mode == GST_LPCM_DVD2 ? 1 : 0;
++
++  gst_buffer_extract (buf, off, data, 2);
+   first_access = (data[0] << 8) | data[1];
+   if (first_access > size)
+     goto invalid_data;
+@@ -377,7 +388,7 @@ gst_dvdlpcmdec_chain (GstPad * pad, GstObject * parent, GstBuffer * buf)
+    * sub-buffer, greater than that we need to create two. */
+ 
+   /* skip access unit bytes */
+-  off = 2;
++  off += 2;
+ 
+   if (first_access > 4) {
+     /* length of first buffer */
+@@ -617,10 +628,14 @@ gst_dvdlpcmdec_parse (GstAudioDecoder * bdec, GstAdapter * adapter,
+       return GST_FLOW_OK;
+ 
+     case GST_LPCM_DVD:
++    case GST_LPCM_DVD2:
+       return gst_dvdlpcmdec_parse_dvd (dvdlpcmdec, adapter, offset, len);
+ 
+     case GST_LPCM_1394:
+       return gst_dvdlpcmdec_parse_1394 (dvdlpcmdec, adapter, offset, len);
++
++    case GST_LPCM_AUTO:
++      return GST_FLOW_ERROR;
+   }
+   return GST_FLOW_ERROR;
+ }
+diff --git a/gst/dvdlpcmdec/gstdvdlpcmdec.h b/gst/dvdlpcmdec/gstdvdlpcmdec.h
+index 7f3d0c9..34592ab 100644
+--- a/gst/dvdlpcmdec/gstdvdlpcmdec.h
++++ b/gst/dvdlpcmdec/gstdvdlpcmdec.h
+@@ -45,7 +45,9 @@ typedef enum {
+   GST_LPCM_UNKNOWN,
+   GST_LPCM_RAW,
+   GST_LPCM_DVD,
+-  GST_LPCM_1394
++  GST_LPCM_DVD2,
++  GST_LPCM_1394,
++  GST_LPCM_AUTO,
+ } GstDvdLpcmMode;
+ 
+ struct _GstDvdLpcmDec {
+-- 
+1.9.1
+

@@ -1,0 +1,36 @@
+From 7c9d11a6a706414b1694ea4e7024439e3a42eaee Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Wed, 29 Mar 2017 21:06:59 -0400
+Subject: [PATCH 2/2] Set-HDMI-mode-to-1910x1080M@30
+
+Set the HDMI fps default frame rate to 30 instead of 60 fps as defined in the dtb.
+This is needed by the WFD demo with multiple displays used simultaneously (LVDS/HDMI).
+As having one LVDS 1024*768@60 + HDMI 1920*1080@60 is showing IPU bandwidth warnings
+---
+ include/configs/mx6sabre_common.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/mx6sabre_common.h b/include/configs/mx6sabre_common.h
+index 710b6bb..6f66371 100644
+--- a/include/configs/mx6sabre_common.h
++++ b/include/configs/mx6sabre_common.h
+@@ -148,6 +148,7 @@
+ 	"dfu_alt_info=spl raw 0x400\0" \
+ 	"fdt_high=0xffffffff\0"	  \
+ 	"initrd_high=0xffffffff\0" \
++	"bootargs_video=dmfc=3\0" \
+ 	"mmcdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
+ 	"mmcpart=1\0" \
+ 	"mmcroot=" CONFIG_MMCROOT " rootwait rw\0" \
+@@ -167,7 +168,7 @@
+ 		"fi\0" \
+ 	EMMC_ENV	  \
+ 	"smp=" CONFIG_SYS_NOSMP "\0"\
+-	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} " \
++	"mmcargs=setenv bootargs console=${console},${baudrate} ${smp} ${bootargs_video} " \
+ 		"root=${mmcroot}\0" \
+ 	"loadbootscript=" \
+ 		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+-- 
+1.9.1
+

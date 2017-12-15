@@ -1,0 +1,11 @@
+gst 1.0
+udpsrc      : LGPLv2
+tsdemux     : LGPLv2
+queue       : LGPLv2
+vpudec      : LGPLv2 - origin FSL
+imxv4l2sink : LGPLv2 - origin FSL
+decodebin   : LGPLv2
+audioconvert: LGPLv2
+volume      : LGPLv2
+alsasink    : LGPLv2
+    

@@ -1,0 +1,71 @@
+From 2dfabac5ed1e644aa93dd45fa1148fda59a4c916 Mon Sep 17 00:00:00 2001
+From: xlin <xlin@murata.com>
+Date: Tue, 7 Feb 2017 14:35:20 -0600
+Subject: [PATCH 2/4] SN8000  fix on imx6ul
+
+---
+ arch/arm/boot/dts/imx6ul-14x14-evk.dts  | 3 ++-
+ arch/arm/boot/dts/imx6ul-9x9-evk.dts    | 3 ++-
+ arch/arm/boot/dts/imx6ull-14x14-evk.dts | 3 ++-
+ arch/arm/boot/dts/imx6ull-9x9-evk.dts   | 3 ++-
+ 4 files changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/imx6ul-14x14-evk.dts b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+index b4abb5b..2217b0a 100644
+--- a/arch/arm/boot/dts/imx6ul-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-14x14-evk.dts
+@@ -141,7 +141,8 @@
+ 			#gpio-cells = <2>;
+ 			reg = <0>;
+ 			registers-number = <1>;
+-			registers-default = /bits/ 8 <0x57>;
++			/* Murata: modify default setting so that BT_nPWD/BT_REG_ON is low (0V) during kernel boot. */
++			registers-default = /bits/ 8 <0x47>;
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
+diff --git a/arch/arm/boot/dts/imx6ul-9x9-evk.dts b/arch/arm/boot/dts/imx6ul-9x9-evk.dts
+index 7a6e8c8..73cbbf8 100644
+--- a/arch/arm/boot/dts/imx6ul-9x9-evk.dts
++++ b/arch/arm/boot/dts/imx6ul-9x9-evk.dts
+@@ -140,7 +140,8 @@
+ 			#gpio-cells = <2>;
+ 			reg = <0>;
+ 			registers-number = <1>;
+-			registers-default = /bits/ 8 <0x57>;
++			/* Murata: modify default setting so that BT_nPWD/BT_REG_ON is low (0V) during kernel boot. */
++			registers-default = /bits/ 8 <0x47>;
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
+diff --git a/arch/arm/boot/dts/imx6ull-14x14-evk.dts b/arch/arm/boot/dts/imx6ull-14x14-evk.dts
+index e44fa9d..adfbcab 100644
+--- a/arch/arm/boot/dts/imx6ull-14x14-evk.dts
++++ b/arch/arm/boot/dts/imx6ull-14x14-evk.dts
+@@ -141,7 +141,8 @@
+ 			#gpio-cells = <2>;
+ 			reg = <0>;
+ 			registers-number = <1>;
+-			registers-default = /bits/ 8 <0x57>;
++			/* Murata: modify default setting so that BT_nPWD/BT_REG_ON is low (0V) during kernel boot. */
++			registers-default = /bits/ 8 <0x47>;
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
+diff --git a/arch/arm/boot/dts/imx6ull-9x9-evk.dts b/arch/arm/boot/dts/imx6ull-9x9-evk.dts
+index 9ca45fa..7fc4f95 100644
+--- a/arch/arm/boot/dts/imx6ull-9x9-evk.dts
++++ b/arch/arm/boot/dts/imx6ull-9x9-evk.dts
+@@ -140,7 +140,8 @@
+ 			#gpio-cells = <2>;
+ 			reg = <0>;
+ 			registers-number = <1>;
+-			registers-default = /bits/ 8 <0x57>;
++			/* Murata: modify default setting so that BT_nPWD/BT_REG_ON is low (0V) during kernel boot. */
++			registers-default = /bits/ 8 <0x47>;
+ 			spi-max-frequency = <100000>;
+ 		};
+ 	};
+-- 
+1.9.1
+

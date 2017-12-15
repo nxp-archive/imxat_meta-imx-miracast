@@ -1,0 +1,292 @@
+From 49d2eb2f5362cb660ce5652456c71d24346b5b53 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Wed, 29 Mar 2017 17:13:06 -0400
+Subject: [PATCH 2/7] mpegtsdemux - Latency optimization algorithm
+
+Introduce the latency optimization algorithm written by Marouen Ghodhbane
+This algo is necessary to have a dynamic latency handled, and reduce the source/sink latency as during WiFi Display/Miracast use case.
+It is based on calculating first the average time between running time and starting time on 10 buffer samples to get initial latency, then adapt it from the differences reported inside a sliding window.
+
+New parameters are introduced to fine tune and control this algo as:
+dynamic-latency: Using the dynamic latency algorithm to adapt latency in the sinks wich will reduce latency when sync is true
+latency-window: Latency window size  in SECONDS
+samples-number: Number of picks (a pick is buffer pushed after the current latency level ) to wait for inside the latency window before increasing the latency level
+static-latency: If sync is true and dynamic latency is disabled we will use this value as a static latency for the buffers in MILLISECONDS
+max-latency-changes: Maxumum number of allowed latency modification
+---
+ gst/mpegtsdemux/tsdemux.c | 202 +++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 199 insertions(+), 3 deletions(-)
+
+diff --git a/gst/mpegtsdemux/tsdemux.c b/gst/mpegtsdemux/tsdemux.c
+index 8a41f90..a30360a 100644
+--- a/gst/mpegtsdemux/tsdemux.c
++++ b/gst/mpegtsdemux/tsdemux.c
+@@ -79,6 +79,15 @@ GST_DEBUG_CATEGORY_STATIC (ts_demux_debug);
+ 
+ #define ABSDIFF(a,b) (((a) > (b)) ? ((a) - (b)) : ((b) - (a)))
+ 
++#define DEFAULT_LAT_WINDOW_SIZE    ((25 * GST_SECOND) / GST_SECOND)
++#define DEFAULT_STATIC_LATENCY    ((400 * GST_MSECOND) / GST_MSECOND)
++#define DEFAULT_DYNAMIC_LATENCY   TRUE
++#define DEFAULT_SLAVE_METHOD    GST_BASE_AUDIO_SINK_SLAVE_SKEW
++#define DEFAULT_MAX_ALLOWED_LAT_CHANGES 15
++#define DEFAULT_SAMPLES_NUMBER 5
++
++#define MAX_LAT_LEVELS 32
++
+ static GQuark QUARK_TSDEMUX;
+ static GQuark QUARK_PID;
+ static GQuark QUARK_PCR;
+@@ -87,6 +96,24 @@ static GQuark QUARK_PTS;
+ static GQuark QUARK_DTS;
+ static GQuark QUARK_OFFSET;
+ 
++static GstClockTime  last_push=0;
++static GstClockTime  first_time=0;
++static GstClockTime  first_occur=0; // Occurence of the first pick in the latency adaptation algortihm
++
++static int curr_level = 0;
++static int change_latency=1;
++static int next_level_count=0;
++static int curr_level_index=0;
++static int lat_levels[MAX_LAT_LEVELS] = {-260,-240,-220,-200,-180,-160,-140,-120,-100,-80,-60,-40,-20,0,50, 80,100,120,140,160,180,200,220,240,260,280,300,320,340,360,380,400};
++static int start_lat_calc=0;
++static int first_buffer = 1;
++static GstClockTimeDiff diff_runn_ts_avg = 0;
++static int buff_count=0;
++static GstClockTimeDiff last_diff_runn_ts = 0;
++static int pos_count = 0;
++static int neg_count = 0;
++static int latency_change_counter = 0;
++
+ typedef enum
+ {
+   PENDING_PACKET_EMPTY = 0,     /* No pending packet/buffer
+@@ -273,6 +300,11 @@ enum
+   PROP_0,
+   PROP_PROGRAM_NUMBER,
+   PROP_EMIT_STATS,
++  PROP_LAT_WINDOW_SIZE,
++  PROP_DYNAMIC_LATENCY,
++  PROP_SAMPLES_NUMBER,
++  PROP_STATIC_LATENCY,
++  PROP_MAX_ALLOWED_LAT_CHANGES,
+   /* FILL ME */
+ };
+ 
+@@ -361,6 +393,28 @@ gst_ts_demux_class_init (GstTSDemuxClass * klass)
+           "Emit messages for every pcr/opcr/pts/dts", FALSE,
+           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+ 
++  g_object_class_install_property (gobject_class, PROP_DYNAMIC_LATENCY,
++      g_param_spec_boolean ("dynamic-latency", "Dynamic latency",
++          "Using the dynamic latency algorithm to adapt latency in the sinks wich will reduce latency when sync is true ",
++          DEFAULT_DYNAMIC_LATENCY, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++  g_object_class_install_property (gobject_class, PROP_LAT_WINDOW_SIZE,
++      g_param_spec_int ("latency-window", "Latency Window size",
++          "Latency window size  in SECONDS", 1,
++          G_MAXINT, DEFAULT_LAT_WINDOW_SIZE,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++  g_object_class_install_property (gobject_class, PROP_SAMPLES_NUMBER,
++      g_param_spec_int ("samples-number", "Number of samples",
++          "Number of picks (a pick is buffer pushed after the current latency level ) to wait for inside the latency window before increasing the latency level ", 1,
++          G_MAXINT, DEFAULT_SAMPLES_NUMBER,
++          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++  g_object_class_install_property (gobject_class, PROP_STATIC_LATENCY,
++      g_param_spec_int ("static-latency", "Static Latency",
++          "If sync is true and dynamic latency is disabled we will use this value as a static latency for the buffers in MILLISECONDS", G_MININT, G_MAXINT,
++          DEFAULT_STATIC_LATENCY, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++  g_object_class_install_property (gobject_class, PROP_MAX_ALLOWED_LAT_CHANGES,
++      g_param_spec_int ("max-latency-changes", "Maxumum number of allowed latency modification",
++          "Maximum number of allowed latency changes ", -1, G_MAXINT, DEFAULT_MAX_ALLOWED_LAT_CHANGES, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
++
+   element_class = GST_ELEMENT_CLASS (klass);
+   gst_element_class_add_pad_template (element_class,
+       gst_static_pad_template_get (&video_template));
+@@ -399,6 +453,15 @@ gst_ts_demux_reset (MpegTSBase * base)
+ 
+   demux->rate = 1.0;
+   gst_segment_init (&demux->segment, GST_FORMAT_UNDEFINED);
++
++  demux->dynamic_latency = DEFAULT_DYNAMIC_LATENCY;
++  demux->latency_window = DEFAULT_LAT_WINDOW_SIZE;
++  demux->samples_number = DEFAULT_SAMPLES_NUMBER;
++  demux->static_latency = DEFAULT_STATIC_LATENCY;
++  demux->max_latency_changes = 10;
++  //printf ("\n ---------- RESET max latency changes %d",demux->max_latency_changes);
++  //printf (" \n ----------RESET --- Ts demux parameters : dynamic latency %d  - latency window %"GST_TIME_FORMAT" Samples %d  -  static latency %"GST_TIME_FORMAT" max latency changes %d \n ",demux->dynamic_latency,GST_TIME_ARGS(demux->latency_window * GST_SECOND),demux->samples_number,GST_TIME_ARGS(ABS(demux->static_latency * GST_MSECOND)),ABS(demux->max_latency_changes));
++
+   if (demux->segment_event) {
+     gst_event_unref (demux->segment_event);
+     demux->segment_event = NULL;
+@@ -452,6 +515,21 @@ gst_ts_demux_set_property (GObject * object, guint prop_id,
+     case PROP_EMIT_STATS:
+       demux->emit_statistics = g_value_get_boolean (value);
+       break;
++    case PROP_DYNAMIC_LATENCY:
++      demux->dynamic_latency = g_value_get_boolean (value);
++      break;
++    case PROP_LAT_WINDOW_SIZE:
++      demux->latency_window = g_value_get_int (value);
++      break;
++    case PROP_SAMPLES_NUMBER:
++      demux->samples_number = g_value_get_int (value);
++      break;
++    case PROP_STATIC_LATENCY:
++      demux->static_latency = g_value_get_int (value);
++      break;
++    case PROP_MAX_ALLOWED_LAT_CHANGES:
++      demux->max_latency_changes = g_value_get_int (value);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+   }
+@@ -470,6 +548,21 @@ gst_ts_demux_get_property (GObject * object, guint prop_id,
+     case PROP_EMIT_STATS:
+       g_value_set_boolean (value, demux->emit_statistics);
+       break;
++    case PROP_DYNAMIC_LATENCY:
++      g_value_set_boolean (value,  demux->dynamic_latency);
++      break;
++    case PROP_LAT_WINDOW_SIZE:
++      g_value_set_int (value,  demux->latency_window);
++      break;
++    case PROP_SAMPLES_NUMBER:
++      g_value_set_int (value, demux->samples_number);
++      break;
++    case PROP_STATIC_LATENCY:
++      g_value_set_int (value, demux->static_latency);
++      break;
++    case PROP_MAX_ALLOWED_LAT_CHANGES:
++      g_value_set_int (value, demux->max_latency_changes);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+   }
+@@ -540,10 +633,18 @@ gst_ts_demux_srcpad_query (GstPad * pad, GstObject * parent, GstQuery * query)
+            PTS/DTS. We therefore allow a latency of 700ms for that.
+          */
+         gst_query_parse_latency (query, &live, &min_lat, &max_lat);
+-        min_lat += TS_LATENCY;
+-        if (GST_CLOCK_TIME_IS_VALID (max_lat))
+-          max_lat += TS_LATENCY;
++        if (start_lat_calc == 1 ) {
++          min_lat= curr_level * GST_MSECOND;
++          //printf ("\n Changing the min latency to %"GST_TIME_FORMAT "ABS %"GST_TIME_FORMAT,GST_TIME_ARGS(min_lat),GST_TIME_ARGS(ABS(min_lat)));
+         gst_query_set_latency (query, live, min_lat, max_lat);
++        }
++        else {
++          if (min_lat != -1)
++            min_lat += demux->static_latency * GST_MSECOND;
++          if (max_lat != -1)
++            max_lat += 700 * GST_MSECOND;
++          gst_query_set_latency (query, live, min_lat, max_lat);
++        }
+       }
+       break;
+     }
+@@ -2640,6 +2741,101 @@ gst_ts_demux_push_pending_data (GstTSDemux * demux, TSDemuxStream * stream)
+   if (buffer_list)
+     buffer = NULL;
+ 
++/*********************************************/
++
++  if ((latency_change_counter >= demux->max_latency_changes) || (!(demux->dynamic_latency)))
++    goto no_latency_adaptation;
++
++  GstClockTime base_time=  GST_ELEMENT_CAST (demux)->base_time;
++  GstClock * SysClock;
++  SysClock = gst_system_clock_obtain ();
++  GstClockTime currtime;
++  currtime = gst_clock_get_time(SysClock);
++
++  GstClockTime diff_from_last_push= currtime - last_push;
++  GstClockTimeDiff diff_runn_ts= currtime - ( base_time + GST_BUFFER_TIMESTAMP (buffer));
++
++  if (first_time == 0) {
++    first_time= currtime;
++  GST_DEBUG_OBJECT (stream->pad," Ts demux parameters : dynamic latency %d  - latency window %"GST_TIME_FORMAT" Samples %d  -  static latency %"GST_TIME_FORMAT" max latency changes %d \n ",demux->dynamic_latency,GST_TIME_ARGS(demux->latency_window * GST_SECOND),demux->samples_number,GST_TIME_ARGS(ABS(demux->static_latency * GST_MSECOND)),ABS(demux->max_latency_changes));
++  }
++
++  /*Use the first 10 buffers to get the approximative first latency to go from
++    Some devices can send PTS advanced in time and some of them could send PTS a little bit late
++    Here we compare with the running time to calculate if we reduce the latency or increase it
++   to get the minimum value that guarantees the render.
++  */
++  if ((first_time != 0) && (buff_count<10) ) {
++    /* Negative value tells that the buffer are early in time else if it's positive that means that they are late */
++    if ((diff_runn_ts < 0)) neg_count++;
++    else pos_count++;
++    buff_count++;
++    diff_runn_ts_avg+= diff_runn_ts;
++  }
++
++  if ( buff_count ==10 ){
++    diff_runn_ts_avg= diff_runn_ts_avg/10;
++
++    GST_DEBUG_OBJECT (stream->pad," Average of difference between running time and Buffers TimeStamps  %"GST_TIME_FORMAT "   Actual latency level %"GST_TIME_FORMAT,GST_TIME_ARGS(ABS(diff_runn_ts_avg)),GST_TIME_ARGS(ABS(lat_levels[curr_level_index]* GST_MSECOND)));
++
++    while ((lat_levels[curr_level_index]* GST_MSECOND) < diff_runn_ts_avg && (curr_level_index < MAX_LAT_LEVELS -1 ))  {
++      curr_level_index++;
++    }
++
++    GST_DEBUG_OBJECT (stream->pad,"current index = %d current level = %d ",curr_level_index,lat_levels[curr_level_index]);
++
++    curr_level=lat_levels[curr_level_index];
++    buff_count++;
++  }
++
++  if (buff_count > 10) {  //We start calculation after the first 10 buffers
++
++    if (diff_runn_ts > curr_level* GST_MSECOND) {
++      if (diff_runn_ts > 0 )
++        GST_DEBUG_OBJECT (stream->pad," Timestamps is lower than running time and higher than the current latency   ... Difference  : % "GST_TIME_FORMAT "... Last Pushed buffer since      : %  "GST_TIME_FORMAT  "Last difference : %"GST_TIME_FORMAT,  GST_TIME_ARGS (ABS(diff_runn_ts))  ,  GST_TIME_ARGS (ABS((diff_from_last_push))),  GST_TIME_ARGS(ABS(last_diff_runn_ts)));
++      else  GST_DEBUG_OBJECT (stream->pad,"  Timestamps is higher  than running time and higher than the current latency   ... Difference  : % - "GST_TIME_FORMAT "... ... Last Pushed buffer since    : %  "GST_TIME_FORMAT  "Last difference: - %"GST_TIME_FORMAT,  GST_TIME_ARGS (ABS(diff_runn_ts))  ,  GST_TIME_ARGS (ABS((diff_from_last_push))),  GST_TIME_ARGS(ABS(last_diff_runn_ts)));
++        //printf("\n BUFFER TIMESTAMPS >>>>>>>>>>>> %"GST_TIME_FORMAT,GST_TIME_ARGS(GST_BUFFER_TIMESTAMP (buffer)) );
++    }
++    /* We consider a Pick , the increase of the value of the difference between running time and PTS comparing with the old one ... We don't consider the "fake picks" which follows the first pick
++    */
++    if((diff_runn_ts > curr_level* GST_MSECOND)&& (diff_runn_ts > last_diff_runn_ts)) {
++      if(next_level_count == 0) first_occur = currtime;
++      next_level_count++;
++    }
++
++    if(next_level_count == demux->samples_number) {
++      next_level_count=0;
++      if(((currtime - first_occur) < demux->latency_window * GST_SECOND ) && (curr_level_index < MAX_LAT_LEVELS -1 )) {
++        curr_level_index++;
++        curr_level=lat_levels[curr_level_index];
++        change_latency=1;
++        GST_WARNING("  CHANGING LATENCY IS REQUIRED TO %d MSECOND  ",curr_level);
++      }
++    }
++    /* We POST the first latency message after 10 seconds from the beginning of the playing  */
++    if((change_latency == 1) &&(currtime - first_time > 10 * GST_SECOND )) {
++      change_latency=0;
++      start_lat_calc=1;
++      GstQuery *query = gst_query_new_latency ();
++      gboolean live =TRUE;
++      gst_query_set_latency (query, live, curr_level * GST_MSECOND , 700 * GST_MSECOND);
++      latency_change_counter++;
++      gst_element_post_message (GST_ELEMENT_CAST (demux),
++      gst_message_new_latency (GST_OBJECT_CAST (demux)));
++      printf(" Posting Latency message with new value of  %d msecond \n",curr_level);
++    }
++
++    if (latency_change_counter == demux->max_latency_changes)
++      GST_WARNING("No More Latency changes --- the maximum allowed number of changes is exceeded (property max-latenct-changes in TSDEMUX plugin)");
++  }
++
++  last_push= currtime;
++  last_diff_runn_ts=diff_runn_ts;
++
++/*********************************************/
++
++no_latency_adaptation :
++
+   GST_DEBUG_OBJECT (stream->pad,
+       "Pushing buffer%s with PTS: %" GST_TIME_FORMAT " , DTS: %"
+       GST_TIME_FORMAT, (buffer_list ? "list" : ""), GST_TIME_ARGS (stream->pts),
+-- 
+1.9.1
+

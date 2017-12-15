@@ -1,0 +1,25 @@
+From 0f345893a99d534462eadfd582a8b694a0324ce4 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Tue, 14 Jun 2016 14:35:17 +0200
+Subject: [PATCH 1/7] Increase faad AAC decoder priority
+
+---
+ ext/faad/gstfaad.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ext/faad/gstfaad.c b/ext/faad/gstfaad.c
+index b72b42d..0745e77 100644
+--- a/ext/faad/gstfaad.c
++++ b/ext/faad/gstfaad.c
+@@ -842,7 +842,7 @@ gst_faad_close_decoder (GstFaad * faad)
+ static gboolean
+ plugin_init (GstPlugin * plugin)
+ {
+-  return gst_element_register (plugin, "faad", GST_RANK_SECONDARY,
++  return gst_element_register (plugin, "faad", GST_RANK_PRIMARY+2,
+       GST_TYPE_FAAD);
+ }
+ 
+-- 
+1.9.1
+

@@ -1,0 +1,50 @@
+From 5fae985389981d21b78a7c3804788a9ec78bd7d9 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Wed, 29 Mar 2017 17:30:18 -0400
+Subject: [PATCH 6/7] Fix latency query and tsdemux properties set
+
+---
+ gst/mpegtsdemux/tsdemux.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/gst/mpegtsdemux/tsdemux.c b/gst/mpegtsdemux/tsdemux.c
+index e02d670..cdbee25 100644
+--- a/gst/mpegtsdemux/tsdemux.c
++++ b/gst/mpegtsdemux/tsdemux.c
+@@ -454,11 +454,6 @@ gst_ts_demux_reset (MpegTSBase * base)
+   demux->rate = 1.0;
+   gst_segment_init (&demux->segment, GST_FORMAT_UNDEFINED);
+ 
+-  demux->dynamic_latency = DEFAULT_DYNAMIC_LATENCY;
+-  demux->latency_window = DEFAULT_LAT_WINDOW_SIZE;
+-  demux->samples_number = DEFAULT_SAMPLES_NUMBER;
+-  demux->static_latency = DEFAULT_STATIC_LATENCY;
+-  demux->max_latency_changes = 10;
+   //printf ("\n ---------- RESET max latency changes %d",demux->max_latency_changes);
+   //printf (" \n ----------RESET --- Ts demux parameters : dynamic latency %d  - latency window %"GST_TIME_FORMAT" Samples %d  -  static latency %"GST_TIME_FORMAT" max latency changes %d \n ",demux->dynamic_latency,GST_TIME_ARGS(demux->latency_window * GST_SECOND),demux->samples_number,GST_TIME_ARGS(ABS(demux->static_latency * GST_MSECOND)),ABS(demux->max_latency_changes));
+ 
+@@ -496,6 +491,12 @@ gst_ts_demux_init (GstTSDemux * demux)
+   demux->flowcombiner = gst_flow_combiner_new ();
+   demux->requested_program_number = -1;
+   demux->program_number = -1;
++  demux->dynamic_latency = DEFAULT_DYNAMIC_LATENCY;
++  demux->latency_window = DEFAULT_LAT_WINDOW_SIZE;
++  demux->samples_number = DEFAULT_SAMPLES_NUMBER;
++  demux->static_latency = DEFAULT_STATIC_LATENCY;
++  demux->max_latency_changes = 10;
++
+   gst_ts_demux_reset (base);
+ }
+ 
+@@ -633,7 +634,7 @@ gst_ts_demux_srcpad_query (GstPad * pad, GstObject * parent, GstQuery * query)
+            PTS/DTS. We therefore allow a latency of 700ms for that.
+          */
+         gst_query_parse_latency (query, &live, &min_lat, &max_lat);
+-        min_lat += TS_LATENCY;
++
+         if (GST_CLOCK_TIME_IS_VALID (max_lat))
+           max_lat += TS_LATENCY;
+ 
+-- 
+1.9.1
+

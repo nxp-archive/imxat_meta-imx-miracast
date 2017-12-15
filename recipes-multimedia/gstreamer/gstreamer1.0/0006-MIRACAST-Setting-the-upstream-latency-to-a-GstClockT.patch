@@ -1,0 +1,145 @@
+From 2ecb7d3a2ea1c274581d35b9179572618fb0d081 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Thu, 30 Mar 2017 12:18:27 -0400
+Subject: [PATCH 1/2] [MIRACAST] Setting the upstream latency to a
+ GstClockTimeDiff  field in the sink
+
+To avoid wierd behavior due to the fact that latency is expected to be only
+positive but with the dynamic latency algorithm in the tsdemux it could be
+negative
+---
+ libs/gst/base/gstbasesink.c | 69 +++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 67 insertions(+), 2 deletions(-)
+
+diff --git a/libs/gst/base/gstbasesink.c b/libs/gst/base/gstbasesink.c
+index 9ad65c8..a2bc557 100644
+--- a/libs/gst/base/gstbasesink.c
++++ b/libs/gst/base/gstbasesink.c
+@@ -181,6 +181,8 @@ struct _GstBaseSinkPrivate
+   gboolean async_enabled;
+   GstClockTimeDiff ts_offset;
+   GstClockTime render_delay;
++  /* MIRACAST USECASE : Global upstream latency that could be negative due to the use of dynamic latency algorithm*/
++  GstClockTimeDiff g_us_latency;
+ 
+   /* start, stop of current buffer, stream time, used to report position */
+   GstClockTime current_sstart;
+@@ -660,6 +662,7 @@ gst_base_sink_init (GstBaseSink * basesink, gpointer g_class)
+   g_atomic_int_set (&priv->qos_enabled, DEFAULT_QOS);
+   priv->async_enabled = DEFAULT_ASYNC;
+   priv->ts_offset = DEFAULT_TS_OFFSET;
++  priv->g_us_latency = 0;
+   priv->render_delay = DEFAULT_RENDER_DELAY;
+   priv->blocksize = DEFAULT_BLOCKSIZE;
+   priv->cached_clock_id = NULL;
+@@ -895,6 +898,48 @@ gst_base_sink_get_ts_offset (GstBaseSink * sink)
+ }
+ 
+ /**
++ * gst_base_sink_set_upstream_latency:
++ * @sink: the sink
++ * @us_latency: the new uspstream latency
++ *
++ * Adjust the synchronisation of @sink with @us_latency. A negative value 
++ * can be emitted from ipstream element in MIRACAST USECASE using the dynamic 
++ * latency algorithm
++ */
++void
++gst_base_sink_set_upstream_latency (GstBaseSink * sink, GstClockTimeDiff us_latency)
++{
++  g_return_if_fail (GST_IS_BASE_SINK (sink));
++
++  GST_OBJECT_LOCK (sink);
++  sink->priv->g_us_latency = us_latency;
++  GST_LOG_OBJECT (sink, "set upstream latency  to %" G_GINT64_FORMAT, us_latency);
++  GST_OBJECT_UNLOCK (sink);
++}
++
++/**
++ * gst_base_sink_get_upstream_latency:
++ * @sink: the sink
++ *
++ * Get the  upstream latency of @sink.
++ *
++ * Returns: The synchronisation offset.
++ */
++GstClockTimeDiff
++gst_base_sink_get_upstream_latency (GstBaseSink * sink)
++{
++  GstClockTimeDiff res;
++
++  g_return_val_if_fail (GST_IS_BASE_SINK (sink), 0);
++
++  GST_OBJECT_LOCK (sink);
++  res = sink->priv->g_us_latency;
++  GST_OBJECT_UNLOCK (sink);
++
++  return res;
++}
++
++/**
+  * gst_base_sink_get_last_sample:
+  * @sink: the sink
+  *
+@@ -1103,6 +1148,7 @@ gst_base_sink_query_latency (GstBaseSink * sink, gboolean * live,
+   GstClockTime min, max, render_delay;
+   GstQuery *query;
+   GstClockTime us_min, us_max;
++  GstClockTimeDiff g_us_latency,old_us_latency;
+ 
+   /* we are live when we sync to the clock */
+   GST_OBJECT_LOCK (sink);
+@@ -1132,6 +1178,14 @@ gst_base_sink_query_latency (GstBaseSink * sink, gboolean * live,
+          * values to create the complete latency. */
+         min = us_min;
+         max = us_max;
++        /* Upstream latency could be negative , Set it to the proper field in the sink*/
++        g_us_latency = (GstClockTimeDiff ) us_min;
++        GST_DEBUG_OBJECT (sink, "Setting the upstream latency in the sink to (%c) %"GST_TIME_FORMAT,(g_us_latency > 0) ? '+' : '-', GST_TIME_ARGS(ABS(g_us_latency)));
++        min = 0;
++        us_min = 0;
++        GstClockTimeDiff old_us_latency = gst_base_sink_get_upstream_latency (sink);
++        GST_DEBUG_OBJECT (sink, "New Upstream latency is %" G_GINT64_FORMAT "Old upstream latency  %"G_GINT64_FORMAT,g_us_latency,old_us_latency);
++        gst_base_sink_set_upstream_latency (sink, g_us_latency);
+       }
+       if (l) {
+         /* we need to add the render delay if we are live */
+@@ -2053,7 +2107,7 @@ out_of_segment:
+ static GstClockTime
+ gst_base_sink_adjust_time (GstBaseSink * basesink, GstClockTime time)
+ {
+-  GstClockTimeDiff ts_offset;
++  GstClockTimeDiff ts_offset,g_us_latency;
+ 
+   /* don't do anything funny with invalid timestamps */
+   if (G_UNLIKELY (!GST_CLOCK_TIME_IS_VALID (time)))
+@@ -2072,6 +2126,17 @@ gst_base_sink_adjust_time (GstBaseSink * basesink, GstClockTime time)
+   } else
+     time += ts_offset;
+ 
++   /* apply upstream latency , be careful for underflows */
++  g_us_latency = basesink->priv->g_us_latency;
++  if (g_us_latency < 0) {
++    g_us_latency = -g_us_latency;
++    if (g_us_latency < time)
++      time -= g_us_latency;
++    else
++      time = 0;
++  } else
++    time += g_us_latency;
++
+   /* subtract the render delay again, which was included in the latency */
+   if (time > basesink->priv->render_delay)
+     time -= basesink->priv->render_delay;
+@@ -2378,7 +2443,7 @@ gst_base_sink_wait (GstBaseSink * sink, GstClockTime time,
+     GST_DEBUG_OBJECT (sink, "possibly waiting for clock to reach %"
+         GST_TIME_FORMAT, GST_TIME_ARGS (time));
+ 
+-    /* compensate for latency, ts_offset and render delay */
++    /* compensate for latency(and upstream latency that could be negative), ts_offset and render delay  */
+     stime = gst_base_sink_adjust_time (sink, time);
+ 
+     /* wait for the clock, this can be interrupted because we got shut down or
+-- 
+1.9.1
+

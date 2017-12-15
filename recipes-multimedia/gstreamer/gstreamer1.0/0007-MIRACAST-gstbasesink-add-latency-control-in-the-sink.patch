@@ -1,0 +1,146 @@
+From 69adf2ca78bf509dde38b5f200816dc71aa18d11 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Thu, 30 Mar 2017 12:26:39 -0400
+Subject: [PATCH 2/2] [MIRACAST] gstbasesink add latency control in the sink
+
+---
+ libs/gst/base/gstbasesink.c | 81 ++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 80 insertions(+), 1 deletion(-)
+
+diff --git a/libs/gst/base/gstbasesink.c b/libs/gst/base/gstbasesink.c
+index a2bc557..085705d 100644
+--- a/libs/gst/base/gstbasesink.c
++++ b/libs/gst/base/gstbasesink.c
+@@ -157,6 +157,17 @@ GST_DEBUG_CATEGORY_STATIC (gst_base_sink_debug);
+ 
+ #define GST_FLOW_STEP GST_FLOW_CUSTOM_ERROR
+ 
++/*The number of buffers we use to calculate the latency in video sink */
++#define LAT_CALC_BUFFERS_NUMBER  50
++
++static int buff_count = 0;
++static GstClockTimeDiff avg_time = 0;   //The average latency for the first buffers in the sink
++static GstClockTime add_latency = 0;   //It will represents eventually the latency in the video decoder
++static int lat_chang_number = 0;  //number of latency query received in the sink
++static gboolean m_applied = FALSE;
++static gboolean got_avg_time = FALSE;
++static GstClockTime first_latency_change_t = 0; 
++
+ typedef struct
+ {
+   gboolean valid;               /* if this info is valid */
+@@ -272,6 +283,8 @@ struct _GstBaseSinkPrivate
+   GstClockTime rc_time;
+   GstClockTime rc_next;
+   gsize rc_accumulated;
++  /* For Miracast NXP: If the pipeline is live and sync is true*/
++  gboolean live_and_sync;
+ };
+ 
+ #define DO_RUNNING_AVG(avg,val,size) (((val) + ((size)-1) * (avg)) / (size))
+@@ -324,6 +337,8 @@ static void gst_base_sink_class_init (GstBaseSinkClass * klass);
+ static void gst_base_sink_init (GstBaseSink * trans, gpointer g_class);
+ static void gst_base_sink_finalize (GObject * object);
+ 
++static GstClockTime last_rec=0;
++
+ GType
+ gst_base_sink_get_type (void)
+ {
+@@ -663,6 +678,7 @@ gst_base_sink_init (GstBaseSink * basesink, gpointer g_class)
+   priv->async_enabled = DEFAULT_ASYNC;
+   priv->ts_offset = DEFAULT_TS_OFFSET;
+   priv->g_us_latency = 0;
++  priv->live_and_sync = FALSE;
+   priv->render_delay = DEFAULT_RENDER_DELAY;
+   priv->blocksize = DEFAULT_BLOCKSIZE;
+   priv->cached_clock_id = NULL;
+@@ -2594,6 +2610,38 @@ again:
+   /* adjust for latency */
+   stime = gst_base_sink_adjust_time (basesink, rstart);
+ 
++  /* 
++  * MIRACAST : Latency Calculation Algorithm 
++  */
++  if(priv->live_and_sync) {
++    GstClock * SysClock;
++    SysClock = gst_system_clock_obtain ();
++    GstClockTime currtime;
++
++    currtime = gst_clock_get_time(SysClock);
++
++    GstClockTime basetime = GST_ELEMENT_CAST (basesink)->base_time;
++    GstClockTime diff_from_last_rec = currtime - last_rec;
++
++
++    last_rec= currtime;
++    /*Let the sink stabilizes when setting the first latency change from the tsdemux*/
++
++    if (( buff_count < LAT_CALC_BUFFERS_NUMBER )  && ( lat_chang_number >= 2 ) && ( currtime > ( first_latency_change_t + 2 * GST_SECOND ) )) {
++      avg_time += ( currtime - (stime + basetime) );
++      buff_count++;
++    }
++    else if (buff_count == LAT_CALC_BUFFERS_NUMBER) {
++      avg_time = avg_time/LAT_CALC_BUFFERS_NUMBER;
++      got_avg_time = TRUE;
++      GST_WARNING_OBJECT (basesink," Average Latency in the sink after latency fix   : (%c) % "GST_TIME_FORMAT, ( avg_time >= 0 ) ? '+': '-', GST_TIME_ARGS (ABS(avg_time)));
++      buff_count++;
++    }
++
++  /* 
++   * MIRACAST : End of Latency Calculation Algorithm 
++   */
++  }
+   /* adjust for rate control */
+   if (priv->rc_next == -1 || (stime != -1 && stime >= priv->rc_next)) {
+     GST_DEBUG_OBJECT (basesink, "reset rc_time to time %" GST_TIME_FORMAT,
+@@ -4846,6 +4894,9 @@ default_element_query (GstElement * element, GstQuery * query)
+   gboolean res = FALSE;
+ 
+   GstBaseSink *basesink = GST_BASE_SINK (element);
++  GstBaseSinkPrivate *priv;
++
++  priv = basesink->priv;
+ 
+   switch (GST_QUERY_TYPE (query)) {
+     case GST_QUERY_POSITION:
+@@ -4934,7 +4985,35 @@ default_element_query (GstElement * element, GstQuery * query)
+ 
+       if ((res = gst_base_sink_query_latency (basesink, &live, &us_live, &min,
+                   &max))) {
+-        gst_query_set_latency (query, live, min, max);
++        if ((live) && (us_live)) {
++          priv->live_and_sync = TRUE;
++          GST_WARNING_OBJECT (basesink, "The pipeline is live and latency compensation in the sink will be applied");
++        } else {
++          priv->live_and_sync = FALSE;
++              GST_WARNING_OBJECT (basesink, "The pipeline is NOT live... No latency algorithm will be applied");
++        }
++        /*We are in a live stream, check for the latency if it's enough (For Miracast NXP using the TSDEMUX plugin) */
++        if(priv->live_and_sync) {
++          lat_chang_number++;
++          /*Record the first change of latency from the tsdemux*/
++          if (lat_chang_number == 2) {
++            GstClock * SysClock;
++            SysClock = gst_system_clock_obtain ();
++            first_latency_change_t = gst_clock_get_time(SysClock);
++          }
++          /* The second latency query corresponds to the first latency change by the tsdemux */
++          if (lat_chang_number >= 2) {
++            GST_DEBUG_OBJECT (basesink," Latency change from TSDEMUX with value  : %"GST_TIME_FORMAT,GST_TIME_ARGS(min));
++            if ((avg_time > ( 20 * GST_MSECOND)) && (!m_applied) && (got_avg_time) ) {
++              add_latency = avg_time + 40 * GST_MSECOND;
++              m_applied = TRUE;
++              GST_WARNING_OBJECT (basesink," We have additional latency at the sink (eventually from the video decoder) with value : %"GST_TIME_FORMAT "set latency in the queury to %"GST_TIME_FORMAT,GST_TIME_ARGS(add_latency),GST_TIME_ARGS(min + add_latency + gst_base_sink_get_latency(basesink)));
++              add_latency += gst_base_sink_get_latency(basesink);
++            }
++          }
++          gst_query_set_latency (query, live, min + add_latency, max);
++        } else 
++          gst_query_set_latency (query, live, min, max);
+       }
+       break;
+     }
+-- 
+1.9.1
+

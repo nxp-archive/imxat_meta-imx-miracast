@@ -1,0 +1,30 @@
+From 2c6d650ae16e13f0c8fdf0e82d52d6d455a261c7 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Wed, 29 Mar 2017 17:16:31 -0400
+Subject: [PATCH 3/7] mpegtsdemux - Latency optim algo
+
+Add required new parameteres inside the _GstTSDemux structure
+---
+ gst/mpegtsdemux/tsdemux.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/gst/mpegtsdemux/tsdemux.h b/gst/mpegtsdemux/tsdemux.h
+index b416733..e663edb 100644
+--- a/gst/mpegtsdemux/tsdemux.h
++++ b/gst/mpegtsdemux/tsdemux.h
+@@ -63,6 +63,12 @@ struct _GstTSDemux
+   guint program_number;
+   gboolean emit_statistics;
+ 
++  gboolean dynamic_latency;
++  gint static_latency;
++  gint max_latency_changes;
++  gint latency_window;
++  gint samples_number;
++
+   /*< private >*/
+   MpegTSBaseProgram *program;	/* Current program */
+   MpegTSBaseProgram *previous_program; /* Previous program, to deactivate once
+-- 
+1.9.1
+

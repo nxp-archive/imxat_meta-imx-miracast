@@ -1,0 +1,40 @@
+From 461d943e1df901423aed9de2e5a41b990cee6205 Mon Sep 17 00:00:00 2001
+From: Michael Olbrich <m.olbrich@pengutronix.de>
+Date: Fri, 29 Apr 2016 14:42:34 +0200
+Subject: [PATCH 4/7] tsdemux: add support for LPCM with stream_type = 0x83
+
+---
+ gst/mpegtsdemux/gstmpegdefs.h | 1 +
+ gst/mpegtsdemux/tsdemux.c     | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/gst/mpegtsdemux/gstmpegdefs.h b/gst/mpegtsdemux/gstmpegdefs.h
+index e179f7d..5947d71 100644
+--- a/gst/mpegtsdemux/gstmpegdefs.h
++++ b/gst/mpegtsdemux/gstmpegdefs.h
+@@ -48,6 +48,7 @@
+ /* private stream types */
+ #define ST_PS_VIDEO_MPEG2_DCII          0x80
+ #define ST_PS_AUDIO_AC3                 0x81
++#define ST_PS_AUDIO_LPCM2               0x83
+ #define ST_PS_AUDIO_DTS                 0x8a
+ #define ST_PS_AUDIO_LPCM                0x8b
+ #define ST_PS_DVD_SUBPICTURE            0xff
+diff --git a/gst/mpegtsdemux/tsdemux.c b/gst/mpegtsdemux/tsdemux.c
+index a30360a..5a8442b 100644
+--- a/gst/mpegtsdemux/tsdemux.c
++++ b/gst/mpegtsdemux/tsdemux.c
+@@ -1605,6 +1605,10 @@ create_pad_for_stream (MpegTSBase * base, MpegTSBaseStream * bstream,
+       is_audio = TRUE;
+       caps = gst_caps_new_empty_simple ("audio/x-ac3");
+       break;
++    case ST_PS_AUDIO_LPCM2:
++      is_audio = TRUE;
++      caps = gst_caps_new_empty_simple ("audio/x-private2-lpcm");
++      break;
+     case ST_PS_AUDIO_DTS:
+       is_audio = TRUE;
+       caps = gst_caps_new_empty_simple ("audio/x-dts");
+-- 
+1.9.1
+

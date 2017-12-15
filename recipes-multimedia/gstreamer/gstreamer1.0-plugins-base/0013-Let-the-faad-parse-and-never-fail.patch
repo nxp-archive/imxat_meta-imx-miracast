@@ -1,0 +1,33 @@
+From 3afc9c05aa6d24f0d3fd43ee580405ddd43a1abf Mon Sep 17 00:00:00 2001
+From: Marouen Ghodhbane <marouen.ghodhbane@nxp.com>
+Date: Thu, 22 Sep 2016 16:27:05 +0200
+Subject: [PATCH 1/2] Let the faad parse and never fail
+
+---
+ gst-libs/gst/audio/gstaudiodecoder.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/gst-libs/gst/audio/gstaudiodecoder.c b/gst-libs/gst/audio/gstaudiodecoder.c
+index be46015..61c2158 100755
+--- a/gst-libs/gst/audio/gstaudiodecoder.c
++++ b/gst-libs/gst/audio/gstaudiodecoder.c
+@@ -1498,13 +1498,13 @@ gst_audio_decoder_push_buffers (GstAudioDecoder * dec, gboolean force)
+         g_assert (offset <= av);
+         if (offset) {
+           /* jumped a bit */
+-          GST_DEBUG_OBJECT (dec, "skipped %d; setting DISCONT", offset);
++          GST_DEBUG_OBJECT (dec, "skipped %d; setting DISCONT ... Parsing infinitely", offset);
+           gst_adapter_flush (priv->adapter, offset);
+           flush = offset;
+           /* avoid parsing indefinitely */
+           priv->sync_flush += offset;
+-          if (priv->sync_flush > GST_AUDIO_DECODER_MAX_SYNC)
+-            goto parse_failed;
++//           if (priv->sync_flush > GST_AUDIO_DECODER_MAX_SYNC)
++//             goto parse_failed;
+         }
+ 
+         if (ret == GST_FLOW_EOS) {
+-- 
+1.9.1
+

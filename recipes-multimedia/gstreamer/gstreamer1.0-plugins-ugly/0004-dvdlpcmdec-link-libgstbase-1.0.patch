@@ -1,0 +1,26 @@
+From 3a9d4a93dc3b0b3a08504ae5b51b370639fbe078 Mon Sep 17 00:00:00 2001
+From: xlazom00 <xlazom00@gmail.com>
+Date: Sun, 7 Aug 2016 00:10:24 +0000
+Subject: [PATCH 4/7] dvdlpcmdec: link libgstbase-1.0
+
+https://bugzilla.gnome.org/show_bug.cgi?id=769610
+---
+ gst/dvdlpcmdec/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gst/dvdlpcmdec/Makefile.am b/gst/dvdlpcmdec/Makefile.am
+index 2edb120..1e542c3 100644
+--- a/gst/dvdlpcmdec/Makefile.am
++++ b/gst/dvdlpcmdec/Makefile.am
+@@ -3,7 +3,7 @@ plugin_LTLIBRARIES = libgstdvdlpcmdec.la
+ 
+ libgstdvdlpcmdec_la_SOURCES = gstdvdlpcmdec.c
+ libgstdvdlpcmdec_la_CFLAGS = $(GST_PLUGINS_BASE_CFLAGS) $(GST_CFLAGS)
+-libgstdvdlpcmdec_la_LIBADD = $(GST_PLUGINS_BASE_LIBS) -lgstaudio-@GST_API_VERSION@ $(GST_LIBS)
++libgstdvdlpcmdec_la_LIBADD = $(GST_PLUGINS_BASE_LIBS) -lgstaudio-@GST_API_VERSION@ $(GST_BASE_LIBS) $(GST_LIBS)
+ libgstdvdlpcmdec_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+ libgstdvdlpcmdec_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
+ 
+-- 
+1.9.1
+

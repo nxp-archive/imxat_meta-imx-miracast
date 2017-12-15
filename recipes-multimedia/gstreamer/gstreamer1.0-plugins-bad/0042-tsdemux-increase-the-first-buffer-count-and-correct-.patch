@@ -1,0 +1,69 @@
+From 0959c3679b5cf1df84336f0f96b88dedd8ed5a4f Mon Sep 17 00:00:00 2001
+From: Marouen Ghodhbane <marouen.ghodhbane@nxp.com>
+Date: Tue, 4 Oct 2016 13:15:24 +0200
+Subject: [PATCH 7/7] tsdemux: increase the first buffer count and correct the
+ reported latency query
+
+---
+ gst/mpegtsdemux/tsdemux.c | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/gst/mpegtsdemux/tsdemux.c b/gst/mpegtsdemux/tsdemux.c
+index cdbee25..c9ee9fb 100644
+--- a/gst/mpegtsdemux/tsdemux.c
++++ b/gst/mpegtsdemux/tsdemux.c
+@@ -73,6 +73,7 @@
+ 
+ /* latency in nsecs */
+ #define TS_LATENCY (700 * GST_MSECOND)
++#define FIRST_BUFFERS_COUNT	200
+ 
+ GST_DEBUG_CATEGORY_STATIC (ts_demux_debug);
+ #define GST_CAT_DEFAULT ts_demux_debug
+@@ -640,7 +641,7 @@ gst_ts_demux_srcpad_query (GstPad * pad, GstObject * parent, GstQuery * query)
+ 
+         if(base->upstream_live) {
+           if (start_lat_calc == 1 ) {
+-            min_lat= curr_level * GST_MSECOND;
++            min_lat += curr_level * GST_MSECOND;
+           } else {
+             if (min_lat != -1)
+               min_lat += demux->static_latency * GST_MSECOND;
+@@ -2771,12 +2772,12 @@ gst_ts_demux_push_pending_data (GstTSDemux * demux, TSDemuxStream * stream)
+   GST_DEBUG_OBJECT (stream->pad," Ts demux parameters : dynamic latency %d  - latency window %"GST_TIME_FORMAT" Samples %d  -  static latency %"GST_TIME_FORMAT" max latency changes %d \n ",demux->dynamic_latency,GST_TIME_ARGS(demux->latency_window * GST_SECOND),demux->samples_number,GST_TIME_ARGS(ABS(demux->static_latency * GST_MSECOND)),ABS(demux->max_latency_changes));
+   }
+ 
+-  /*Use the first 10 buffers to get the approximative first latency to go from
++  /*Use the first FIRST_BUFFERS_COUNT buffers to get the approximative first latency to go from
+     Some devices can send PTS advanced in time and some of them could send PTS a little bit late
+     Here we compare with the running time to calculate if we reduce the latency or increase it
+    to get the minimum value that guarantees the render.
+   */
+-  if ((first_time != 0) && (buff_count<10) ) {
++  if ((first_time != 0) && (buff_count < FIRST_BUFFERS_COUNT) ) {
+     /* Negative value tells that the buffer are early in time else if it's positive that means that they are late */
+     if ((diff_runn_ts < 0)) neg_count++;
+     else pos_count++;
+@@ -2784,8 +2785,8 @@ gst_ts_demux_push_pending_data (GstTSDemux * demux, TSDemuxStream * stream)
+     diff_runn_ts_avg+= diff_runn_ts;
+   }
+ 
+-  if ( buff_count ==10 ){
+-    diff_runn_ts_avg= diff_runn_ts_avg/10;
++  if ( buff_count == FIRST_BUFFERS_COUNT ){
++    diff_runn_ts_avg= diff_runn_ts_avg/FIRST_BUFFERS_COUNT;
+ 
+     GST_DEBUG_OBJECT (stream->pad," Average of difference between running time and Buffers TimeStamps  %"GST_TIME_FORMAT "   Actual latency level %"GST_TIME_FORMAT,GST_TIME_ARGS(ABS(diff_runn_ts_avg)),GST_TIME_ARGS(ABS(lat_levels[curr_level_index]* GST_MSECOND)));
+ 
+@@ -2799,7 +2800,7 @@ gst_ts_demux_push_pending_data (GstTSDemux * demux, TSDemuxStream * stream)
+     buff_count++;
+   }
+ 
+-  if (buff_count > 10) {  //We start calculation after the first 10 buffers
++  if (buff_count > FIRST_BUFFERS_COUNT) {  //We start calculation after the first FIRST_BUFFERS_COUNT buffers
+ 
+     if (diff_runn_ts > curr_level* GST_MSECOND) {
+       if (diff_runn_ts > 0 )
+-- 
+1.9.1
+

@@ -1,0 +1,28 @@
+From e25171c3b29e6ae1ca2755c65d3d31e23d9fbeed Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Tim-Philipp=20M=C3=BCller?= <tim@centricular.com>
+Date: Mon, 8 Aug 2016 09:58:20 +0100
+Subject: [PATCH 5/7] dvdlpcmdec: add libgstbase CFLAGS as well
+
+For consistency.
+
+https://bugzilla.gnome.org/show_bug.cgi?id=769610
+---
+ gst/dvdlpcmdec/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gst/dvdlpcmdec/Makefile.am b/gst/dvdlpcmdec/Makefile.am
+index 1e542c3..6fb9371 100644
+--- a/gst/dvdlpcmdec/Makefile.am
++++ b/gst/dvdlpcmdec/Makefile.am
+@@ -2,7 +2,7 @@
+ plugin_LTLIBRARIES = libgstdvdlpcmdec.la
+ 
+ libgstdvdlpcmdec_la_SOURCES = gstdvdlpcmdec.c
+-libgstdvdlpcmdec_la_CFLAGS = $(GST_PLUGINS_BASE_CFLAGS) $(GST_CFLAGS)
++libgstdvdlpcmdec_la_CFLAGS = $(GST_PLUGINS_BASE_CFLAGS) $(GST_BASE_CFLAGS) $(GST_CFLAGS)
+ libgstdvdlpcmdec_la_LIBADD = $(GST_PLUGINS_BASE_LIBS) -lgstaudio-@GST_API_VERSION@ $(GST_BASE_LIBS) $(GST_LIBS)
+ libgstdvdlpcmdec_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
+ libgstdvdlpcmdec_la_LIBTOOLFLAGS = $(GST_PLUGIN_LIBTOOLFLAGS)
+-- 
+1.9.1
+
