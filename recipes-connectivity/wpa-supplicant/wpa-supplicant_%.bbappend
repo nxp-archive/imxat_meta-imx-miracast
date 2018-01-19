@@ -24,5 +24,6 @@ do_configure_append() {
 do_install_append () {
 	install -d ${D}${sysconfdir}
 	install -m 600 ${WORKDIR}/wpa_supplicant.conf-P2P ${D}${sysconfdir}/wpa_supplicant.conf
+	install -m 600 ${WORKDIR}/wpa_supplicant.conf-P2P ${D}${sysconfdir}/wpa_supplicant.conf.init
 }
 
