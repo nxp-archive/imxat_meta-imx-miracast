@@ -1,6 +1,6 @@
 include wfd-sink.inc
 
-PV = "2.24"
+PV = "2.25"
 
 S = "${WORKDIR}/git"
 
@@ -12,7 +12,7 @@ DEPENDS += "qtbase"
 SRC_URI += "git://git@sw-stash.freescale.net/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
 
 #The revision of the source code used to build the package
-SRCREV = "11cc5df56de23aa5c0b62545f8c650876b88ee01"
+SRCREV = "badd56e6776c971758aa1e9db31449dc24eb82b4"
 
 # Causes tarballs of the Git repositories, including the Git metadata, to be placed in the DL_DIR directory
 BB_GENERATE_MIRROR_TARBALLS = "1"
