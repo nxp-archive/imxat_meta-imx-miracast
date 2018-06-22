@@ -31,6 +31,8 @@ RDEPENDS_${PN}_append = " \
 
 WFD_MANAGER_CONF_imx6qsabreauto = "wfd-sink_imx6sabreauto_conf"
 WFD_MANAGER_CONF_imx6qsabresd = "wfd-sink_imx6sabresd_conf"
+WFD_MANAGER_CONF_imx6dlsabreauto = "wfd-sink_imx6sabreauto_conf"
+WFD_MANAGER_CONF_imx6dlsabresd = "wfd-sink_imx6sabresd_conf"
 
 SRC_URI += " file://${WFD_MANAGER_CONF} \
 "
