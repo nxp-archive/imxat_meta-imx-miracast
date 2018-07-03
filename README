@@ -69,10 +69,10 @@ This will mark to Yocto Project that the package have been fetched.
 
 Step 4:
 Build the Miracast demo image from WFD sources
-    $ bitbake egl-embplug-miracast-qt5
+    $ bitbake egl-imx-miracast-qt5
 
 Build the Miracast demo image from WFD binaries
-    $ bitbake egl-embplug-miracast-qt5-bin
+    $ bitbake egl-imx-miracast-qt5-bin
 
 Deployment
 --------------
