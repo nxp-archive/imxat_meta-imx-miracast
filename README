@@ -1,124 +1,95 @@
-Miracast stack Yocto Project Installation
+NXP Linux Miracast/WFD Sink Stack
+==============
+
+Getting Started
+--------------
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+
+Prerequisites
+--------------
+This Miracast meta-layer should be applied on top of the NXP fsl-yocto-L4.1.15_2.0.0-ga release
+See corresponding i.MX_Yocto_Project_User's_Guide.pdf for Yocto Project Installation
+
+Miracast WFD Sink Stack Building & Installing
+--------------
 
 Step 1:
-Update Yocto Project per the instructions from the Yocto Project User's Guide
-and run the setup script. The Miracast demo image is making use of Qt for 
-the UI, that can be run on a framebuffer (FB) or wayland/weston graphic environment
+- Update Yocto Project per the instructions from the Yocto Project User's Guide and run the setup script.
+The Miracast demo image is making use of Qt for the UI, that can be run on a framebuffer (FB) or wayland/weston graphic environment
 
 In case you build the Miracast demo for an i.MX6q SabreSD Platform using a FB distro:
-     $ DISTRO=fsl-imx-fb MACHINE=imx6qsabresd source fsl-setup-release.sh -b <Your_Build_Directory>
+    $ DISTRO=fsl-imx-fb MACHINE=imx6qsabresd source fsl-setup-release.sh -b <Your_Build_Directory>
 
 In case you build the Miracast demo for an i.MX6q SabreAI Platform using a wayland distro:
-     $ DISTRO=fsl-imx-wayland MACHINE=imx6qsabreauto source fsl-setup-release.sh -b <Your_Build_Directory>
+    $ DISTRO=fsl-imx-wayland MACHINE=imx6qsabreauto source fsl-setup-release.sh -b <Your_Build_Directory>
 
-/* ************************************************************************** */
+In case you build the Miracast demo for an i.MX6dl SabreAI Platform using a wayland distro:
+    $ DISTRO=fsl-imx-wayland MACHINE=imx6dlsabreauto source fsl-setup-release.sh -b <Your_Build_Directory>
 
 step 2:
-- Extract and copy the meta-embplug-miracast folder to the sources directory and edit the
-bblayers.conf in <Your_Build_Directory>/conf directory to add the following line at the end:
-     BBLAYERS += " ${BSPDIR}/sources/meta-embplug-miracast "
+- Extract and copy the meta-imx-miracast folder to the sources directory and edit the bblayers.conf
+in <Your_Build_Directory>/conf directory to add the following line at the end:
+    BBLAYERS += " ${BSPDIR}/sources/meta-imx-miracast "
 
-- Gstreamer pipelines are used to render decrypted MPEG2-TS stream outputted by
- the Miracast stack. These Gstreamer pipelines are making use of faad (gst-plugins-bad) 
-and dvdlpcmdec (gst-plugins-ugly) plugins. So add "commercial" license support into
- the local.conf in <Your_Build_Directory>/conf directory by adding the following line in order 
-to be able to build and use such plugins:
+Gstreamer pipelines are used to render decrypted MPEG2-TS stream outputted by the Miracast Stack.
+These Gstreamer pipelines are making use of faad (gst-plugins-bad) and dvdlpcmdec (gst-plugins-ugly) plugins.
+- Add the "commercial" license support into the local.conf from <Your_Build_Directory>/conf directory by adding the following line at the end:
     LICENSE_FLAGS_WHITELIST = "commercial"
 
-/* ************************************************************************** */
-
 Step 3 (Optional):
-REQUIRED IN CASE YOU USE A COMPRESSED WFD SINK SOURCES ARCHIVE, FOR CUSTOMERS 
-AND PARTNERS ONLY.
-NXP EMPLOYEES CAN ACCESS STASH REPOSITORY DIRECTLY AND DON'T NEED THIS STEP
-- Copy the wfd-sink (Miracast) sources "src-wfd-sink_<version>.tar.gz" to your downloads directory. 
+**REQUIRED IN CASE YOU USE A WFD SINK SOURCES SNAPSHOT**
+- Copy the wfd-sink (Miracast) sources "src-wfd-sink_<version>.tar.gz" to your downloads directory.
 By default, a downloads directory exist at the same level as sources directory.
-This will only exist if a build has been started. For a clean system, create
-the downloads directory before copying the packages. The downloads directory
-can also be specified by DL_DIR in the <Your_Build_Directory>/conf/local.conf.
+This will only exist if a build has been started.
+For a clean system, create the downloads directory before copying the packages.
+The downloads directory can also be specified by DL_DIR in the <Your_Build_Directory>/conf/local.conf.
 
 - Create the .done file in the downloads directory
-After copying "src-wfd-sink_<version>.tar.gz", change to the downloads directory and 
-create the .done files for this package. 
+After copying "src-wfd-sink_<version>.tar.gz", change to the downloads directory and create the .done files for this package. 
 This will mark to Yocto Project that the package has been fetched.
-     $ touch src-wfd-sink_<version>.tar.gz.done
+    $ touch src-wfd-sink_<version>.tar.gz.done
 
 - Edit the local.conf in <Your_Build_Directory>/conf directory and add the following line:
-     INTERNAL_MIRROR = "http://localhost"
+    INTERNAL_MIRROR = "http://localhost"
 
-
-REQUIRED IN CASE YOU USE A COMPRESSED WFD SINK BINARY ARCHIVE, FOR CUSTOMERS 
-AND PARTNERS ONLY.
-NXP EMPLOYEES CAN ACCESS STASH REPOSITORY DIRECTLY AND DON'T NEED THIS STEP
-- Copy the wfd-sink (Miracast) binaries "bin-wfd-sink_<version>.tar.gz" to your downloads directory. 
+**REQUIRED IN CASE YOU USE A PREBUILT WFD SINK BINARY ARCHIVE**
+- Copy the wfd-sink (Miracast) binaries "bin-wfd-sink_<version>.tar.gz" to your downloads directory.
 By default, a downloads directory exist at the same level as sources directory.
-This will only exist if a build has been started. For a clean system, create
-the downloads directory before copying the packages. The downloads directory
-can also be specified by DL_DIR in the <Your_Build_Directory>/conf/local.conf.
+This will only exist if a build has been started.
+For a clean system, create the downloads directory before copying the packages.
+The downloads directory can also be specified by DL_DIR in the <Your_Build_Directory>/conf/local.conf.
 
 - Create the .done file in the downloads directory
-After copying "bin-wfd-sink_<version>.tar.gz", change to the downloads directory and 
-create the .done files for this package. 
+After copying "bin-wfd-sink_<version>.tar.gz", change to the downloads directory and create the .done files for this package.
 This will mark to Yocto Project that the package have been fetched.
-     $ touch bin-wfd-sink_<version>.tar.gz.done
+    $ touch bin-wfd-sink_<version>.tar.gz.done
 
 - Edit the local.conf in <Your_Build_Directory>/conf and add the following line:
-     INTERNAL_MIRROR = "http://localhost"
+    INTERNAL_MIRROR = "http://localhost"
 
-/* ************************************************************************** */
-
-Step 4 (Optional):
-REQUIRED IN CASE YOU USE A COMPRESSED WFD SINK SOURCES ARCHIVE, FOR CUSTOMERS 
-AND PARTNERS ONLY.
-NXP EMPLOYEES CAN ACCESS STASH REPOSITORY DIRECTLY AND DON'T NEED THIS STEP
-The "original" wfd-sink bitbake recipe is fetching the WFD (Miracast) stack sources
-from NXP internal Stash repository.
-In case, a compressed archive of the WFD stack is provided for evaluation, modify 
-the wfd-sink.bb bitbake recipe into meta-embplug-miracast/recipes-multimedia/wfd-sink/
- folder as follow:
-
---S = "${WORKDIR}/git"
-++S = "${WORKDIR}"
-
-# BitBake uses the SRC_URI variable to point to source files regardless of their location.
-# Each recipe must have a SRC_URI variable that points to the source.
---SRC_URI += "git://git@sw-stash.freescale.net/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
-++SRC_URI += "file://src-${PN}_${PV}.tar.gz"
-
-#The revision of the source code used to build the package
---SRCREV = "fc3d18fc7c588fa2121dc9888106a8a081e3089b"
-
-In Yocto, in case a file archive is used/fetched, md5sum and sha256sum must be provided for such file.
-This can be retrieved from md5sum and sha256sum Linux commands on the provided WFD source tar.gz archive.
-Replace if needed below results with correct commands ouputs.
-
-++SRC_URI[md5sum] = "adef97880287c52bc7bd8be57e11b6c0"
-++SRC_URI[sha256sum] = "0008f717980252a1660c1d7bea4855f0ed16982e0e8667113715eb4ce911c156"
- 
-/* ************************************************************************** */
-
-Step 5:
+Step 4:
 Build the Miracast demo image from WFD sources
-     $ bitbake egl-embplug-miracast-qt5
+    $ bitbake egl-embplug-miracast-qt5
 
 Build the Miracast demo image from WFD binaries
-     $ bitbake egl-embplug-miracast-qt5-bin
+    $ bitbake egl-embplug-miracast-qt5-bin
 
+Deployment
+--------------
 in case the FrameBuffer backend is used, you will need to edit the /usr/bin/wfd_manager.sh on the target
 uncomment the following line to enable eglfs (FB) platform
-XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform eglfs &
+    XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform eglfs &
 and then comment the following line used for a wayland platform
-XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform wayland &
+    XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform wayland &
 
-/* **************************************************************************** */
-
-Step 6 (optional):
-REQUIRED IN CASE YOU USE A MURATA ZP BCM4339 SDIO MODULE
+**FOLLOWING REQUIRED IN CASE YOU USE A MURATA ZP BCM4339 SDIO MODULE**
 The default sdcard image generated is compatible with the Atheros 9k chipset as the one recommended for the demo.
 In case you want to use the 802.11ac Murata ZP BCM4339 SDIO module with the SabreSD Platform, the following steps are required
-- from a u-boot prompt, modify the fdt_file environment variable to
-#setenv fdt_file imx6q-sabresd-btwifi.dtb
-- Boot the i.MX6 SabreSD Platform and then modify the /etc/init.d/wfd.sh script as follow
-#WPA_SUPPLICANT_CONTROL_IFACE=wlan0
-WPA_SUPPLICANT_CONTROL_IFACE=p2p-dev-wlan0
- 
+- From a u-boot prompt, modify the fdt_file environment variable to:
+    # setenv fdt_file imx6q-sabresd-btwifi.dtb
+
+- Boot the i.MX6 SabreSD Platform and then modify the /etc/init.d/wfd.sh script as follow:
+    #WPA_SUPPLICANT_CONTROL_IFACE=wlan0
+    WPA_SUPPLICANT_CONTROL_IFACE=p2p-dev-wlan0
+
+
