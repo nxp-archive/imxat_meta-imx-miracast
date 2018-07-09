@@ -1,11 +1,11 @@
 include wfd-sink.inc
 
-SRC_URI += "http://localhost/bin-wfd-sink_${PV}.tar.gz"
+SRC_URI += "http://localhost/${PN}_${PV}.tar.gz"
 
 SRC_URI[md5sum] = "76772c80ed929bdc6ab104c6e0266f74"
 SRC_URI[sha256sum] = "803f508a3c1835e607056a368a5b4d065db63bd833059aaa01f0d5fa489a470b"
 
-S = "${WORKDIR}"
+S = "${WORKDIR}/${PN}_${PV}"
 
 DEPENDS += "qtbase"
 
