@@ -9,7 +9,7 @@ DEPENDS += "qtbase"
 
 # BitBake uses the SRC_URI variable to point to source files regardless of their location.
 # Each recipe must have a SRC_URI variable that points to the source.
-SRC_URI += "git://git@sw-stash.freescale.net/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
+SRC_URI += "git://git@bitbucket.sw.nxp.com/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
 
 #The revision of the source code used to build the package
 SRCREV = "badd56e6776c971758aa1e9db31449dc24eb82b4"
