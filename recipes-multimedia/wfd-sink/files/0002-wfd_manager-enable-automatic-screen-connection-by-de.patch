@@ -1,22 +1,24 @@
-From eb6df41220d7aafbfc184bea32be2f97c394845a Mon Sep 17 00:00:00 2001
+From def2b2d271a22086084d099ae0996ea8e87d8c84 Mon Sep 17 00:00:00 2001
 From: Matthieu Vanin <matthieu.vanin@nxp.com>
-Date: Thu, 21 Sep 2017 21:46:55 -0400
-Subject: [PATCH] wfd_manager: enable automatic screen connection by default
+Date: Thu, 20 Sep 2018 20:19:35 -0400
+Subject: [PATCH 1/2] wfd_manager: enable automatic screen connection by
+ default
 
+Signed-off-by: Matthieu Vanin <matthieu.vanin@nxp.com>
 ---
  wfd_manager.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/wfd_manager.sh b/wfd_manager.sh
-index 8738dc5..1b82b22 100755
+index 906daa6..698f503 100755
 --- a/wfd_manager.sh
 +++ b/wfd_manager.sh
 @@ -31,7 +31,7 @@ start_function() {
      #wfd_manager --dfb:fbdev=/dev/fb0 &
-     # wfd_manager -s freescale &
-     #XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform eglfs &
--    XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform wayland &
-+    XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -a -platform wayland &
+     #wfd_manager -s freescale &
+     #WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform eglfs &
+-    WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -platform wayland &
++    WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/root wfd_manager_qt -a -platform wayland &
      pid=$!
  
      if [ "$pid" != "" ]; then
