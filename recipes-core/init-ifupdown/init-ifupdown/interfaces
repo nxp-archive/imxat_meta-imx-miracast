@@ -5,7 +5,8 @@ auto lo
 iface lo inet loopback
 
 # Wireless interfaces
-#auto wlan0
+auto wlan0
+#allow-hotplug wlan0
 iface wlan0 inet dhcp
 	wireless_mode managed
 	wireless_essid any
