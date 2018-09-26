@@ -29,9 +29,25 @@ WFD_MANAGER_CONF_imx6dlsabresd = "wfd-sink_imx6sabresd_conf"
 
 SRC_URI += " file://${WFD_MANAGER_CONF} \
 "
+WFD_MANAGER_DEFAULT_CONFIG_imx6qsabreauto = "conf_LVDS_HDMI"
+WFD_MANAGER_DEFAULT_CONFIG_imx6qsabresd = "conf_LVDS_HDMI"
+WFD_MANAGER_DEFAULT_CONFIG_imx6dlsabreauto = "conf_LVDS_HDMI"
+WFD_MANAGER_DEFAULT_CONFIG_imx6dlsabresd = "conf_LVDS_HDMI"
 
 SERVICE="wfd"
 START_NUMBER="62"
+
+FILES_${PN} += "${sysconfdir}/wfd_sink.conf ${sysconfdir}/wfd_manager.conf "
+
+do_install_append() {
+    # Install configuration files
+    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_sink.conf ${D}${sysconfdir}/wfd_sink.conf
+    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_manager.conf ${D}${sysconfdir}/wfd_manager.conf
+    install -d ${D}${sysconfdir}/${WFD_MANAGER_CONF}
+    cp -r ${WORKDIR}/${WFD_MANAGER_CONF} ${D}${sysconfdir}
+    install -d ${D}${sysconfdir}/rc5.d
+    cd ${D}${sysconfdir}/rc5.d && ln -sf ../init.d/${SERVICE}.sh S${START_NUMBER}${SERVICE}
+}
 
 # Uninstall files from target
 do_uninstall () {

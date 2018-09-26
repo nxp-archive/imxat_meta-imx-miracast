@@ -7,7 +7,7 @@ PV = "2.25"
 SRC_URI += "git://git@bitbucket.sw.nxp.com/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
 
 #The revision of the source code used to build the package
-SRCREV = "8fba6f2900c576b309ea3b439b17c272197cf825"
+SRCREV = "6501258d4a6cb67d916527c6cabb29255d52f031"
 
 # Causes tarballs of the Git repositories, including the Git metadata, to be placed in the DL_DIR directory
 BB_GENERATE_MIRROR_TARBALLS = "1"
@@ -24,13 +24,3 @@ S = "${WORKDIR}/git"
 SSTATE_SCAN_FILES += "apxs"
 
 CPPFLAGS_append = " -DGITID=\\"${SRCREV}\\" -DCONFIG_FILE=\\"/etc/wfd_sink.conf\\" "
-
-# Install files on target
-do_install_append () {
-    install -d ${D}${sysconfdir}/${WFD_MANAGER_CONF}
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/conf_LVDS_HDMI/wfd_sink.conf ${D}${sysconfdir}/wfd_sink.conf
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/conf_LVDS_HDMI/wfd_manager.conf ${D}${sysconfdir}/wfd_manager.conf
-    cp -r ${WORKDIR}/${WFD_MANAGER_CONF} ${D}${sysconfdir}
-    install -d ${D}${sysconfdir}/rc5.d
-    cd ${D}${sysconfdir}/rc5.d && ln -sf ../init.d/${SERVICE}.sh S${START_NUMBER}${SERVICE}
-}

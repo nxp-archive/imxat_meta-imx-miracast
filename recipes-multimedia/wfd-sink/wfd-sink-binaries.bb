@@ -23,17 +23,9 @@ do_install() {
     install -d ${D}${datadir}
     install -d ${D}${bindir}
     install -d ${D}${libdir}
-    install -d ${D}${sysconfdir}/rc5.d
-    install -d ${D}${sysconfdir}/${WFD_MANAGER_CONF}
-
-    # Install configuration files
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/conf_LVDS_HDMI/wfd_sink.conf ${D}${sysconfdir}/wfd_sink.conf
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/conf_LVDS_HDMI/wfd_manager.conf ${D}${sysconfdir}/wfd_manager.conf
-    cp -r ${WORKDIR}/${WFD_MANAGER_CONF} ${D}${sysconfdir}
 
     # Install WFD startup scripts
     install -c -m 755 ${S}/etc/init.d/wfd.sh ${D}/etc/init.d/wfd.sh
-    cd ${D}/etc/rc5.d && ln -sf ../init.d/${SERVICE}.sh S${START_NUMBER}${SERVICE}
 
     # Install wfd scripts
     install -c -m 755 ${S}/usr/bin/certification.sh ${D}${bindir}/certification.sh

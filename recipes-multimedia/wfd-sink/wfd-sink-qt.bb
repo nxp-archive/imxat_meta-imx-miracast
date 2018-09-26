@@ -15,7 +15,7 @@ PV = "2.25"
 SRC_URI += "git://git@bitbucket.sw.nxp.com/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
 
 #The revision of the source code used to build the package
-SRCREV = "8fba6f2900c576b309ea3b439b17c272197cf825"
+SRCREV = "6501258d4a6cb67d916527c6cabb29255d52f031"
 
 SRC_URI += " file://0001-HDCP-Disable-HDCP-support-from-the-sink.patch \
              file://0002-wfd_manager-enable-automatic-screen-connection-by-de.patch \

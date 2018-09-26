@@ -1,7 +1,7 @@
-From def2b2d271a22086084d099ae0996ea8e87d8c84 Mon Sep 17 00:00:00 2001
+From 12dad9b20d82b85330395d124cabf36d5ba2df59 Mon Sep 17 00:00:00 2001
 From: Matthieu Vanin <matthieu.vanin@nxp.com>
 Date: Thu, 20 Sep 2018 20:19:35 -0400
-Subject: [PATCH 1/2] wfd_manager: enable automatic screen connection by
+Subject: [PATCH 2/3] wfd_manager: enable automatic screen connection by
  default
 
 Signed-off-by: Matthieu Vanin <matthieu.vanin@nxp.com>
