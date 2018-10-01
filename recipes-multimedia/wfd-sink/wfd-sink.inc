@@ -37,12 +37,13 @@ WFD_MANAGER_DEFAULT_CONFIG_imx6dlsabresd = "conf_LVDS_HDMI"
 SERVICE="wfd"
 START_NUMBER="62"
 
-FILES_${PN} += "${sysconfdir}/wfd_sink.conf ${sysconfdir}/wfd_manager.conf "
+FILES_${PN} += "${sysconfdir} "
 
 do_install_append() {
     # Install configuration files
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_sink.conf ${D}${sysconfdir}/wfd_sink.conf
-    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_manager.conf ${D}${sysconfdir}/wfd_manager.conf
+    install -d ${sysconfdir}
+    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_sink.conf ${D}${sysconfdir}
+    install -c -m 755 ${WORKDIR}/${WFD_MANAGER_CONF}/${WFD_MANAGER_DEFAULT_CONFIG}/wfd_manager.conf ${D}${sysconfdir}
     install -d ${D}${sysconfdir}/${WFD_MANAGER_CONF}
     cp -r ${WORKDIR}/${WFD_MANAGER_CONF} ${D}${sysconfdir}
     install -d ${D}${sysconfdir}/rc5.d

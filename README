@@ -50,16 +50,7 @@ This will mark to Yocto Project that the package has been fetched.
     $ touch wfd-sink_<version>.tar.gz.done
 
 **REQUIRED IN CASE YOU USE A PREBUILT WFD SINK BINARY ARCHIVE**
-- Copy the wfd-sink (Miracast) binaries "wfd-sink-binaries_<version>.tar.gz" to your downloads directory.
-By default, a downloads directory exist at the same level as sources directory.
-This will only exist if a build has been started.
-For a clean system, create the downloads directory before copying the packages.
-The downloads directory can also be specified by DL_DIR in the <Your_Build_Directory>/conf/local.conf.
-
-- Create the .done file in the downloads directory
-After copying "wfd-sink-binaries_<version>.tar.gz", change to the downloads directory and create the .done files for this package.
-This will mark to Yocto Project that the package has been fetched.
-    $ touch wfd-sink-binaries_<version>.tar.gz.done
+- Copy the wfd-sink (Miracast) binaries "wfd-sink-binaries_<version>.tar.gz" to your source/meta-imx-miracast/recipes-multimedia/wfd-sink/files directory
 
 Step 4:
 Build the Miracast demo image from WFD sources
@@ -85,5 +76,4 @@ In case you want to use the 802.11ac Murata ZP BCM4339 SDIO module with the Sabr
 - Boot the i.MX6 SabreSD Platform and then modify the /etc/init.d/wfd.sh script as follow:
     #WPA_SUPPLICANT_CONTROL_IFACE=wlan0
     WPA_SUPPLICANT_CONTROL_IFACE=p2p-dev-wlan0
-
 
