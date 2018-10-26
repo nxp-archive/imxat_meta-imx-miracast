@@ -6,19 +6,14 @@ inherit core-image
 
 IMAGE_FSTYPES = " tar.bz2 sdcard"
 
-## Select Image Features
+# Add nfs-server / ssh-server-dropbear / splash if required
 IMAGE_FEATURES += " \
     debug-tweaks \
-    splash \
-    nfs-server \
-    ssh-server-dropbear \
-    tools-testapps \
     hwcodecs \
 "
 
 TEST_TOOLS_INSTALL = " \
-    cpufrequtils i2c-tools mtd-utils imx-test \
-    alsa-utils alsa-utils-speakertest evtest \
+    i2c-tools mtd-utils alsa-utils alsa-utils-speakertest evtest iperf3 \
 "
 
 # Gstreamer plugins needed in case we use Gstreamer to handle MPEGTS stream
@@ -28,8 +23,8 @@ GSTREAMER_INSTALL = " \
 
 WIRELESS_IMAGE_INSTALL = " \
     iw \
-    iperf3 \
     wpa-supplicant \
+    init-ifupdown \
     tcpdump \
     wfd-sink \
     linux-firmware-ath9k \
