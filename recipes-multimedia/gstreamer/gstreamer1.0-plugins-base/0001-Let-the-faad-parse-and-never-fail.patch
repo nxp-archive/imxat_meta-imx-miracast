@@ -1,14 +1,15 @@
-From 3afc9c05aa6d24f0d3fd43ee580405ddd43a1abf Mon Sep 17 00:00:00 2001
-From: Marouen Ghodhbane <marouen.ghodhbane@nxp.com>
-Date: Thu, 22 Sep 2016 16:27:05 +0200
+From d92b8e3cd02dc245f891f11cc6dd32cf52fa71d3 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Thu, 25 Oct 2018 09:35:04 -0400
 Subject: [PATCH 1/2] Let the faad parse and never fail
 
+Signed-off-by: Matthieu Vanin <matthieu.vanin@nxp.com>
 ---
  gst-libs/gst/audio/gstaudiodecoder.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/gst-libs/gst/audio/gstaudiodecoder.c b/gst-libs/gst/audio/gstaudiodecoder.c
-index be46015..61c2158 100755
+index 0083759..e2e2b35 100644
 --- a/gst-libs/gst/audio/gstaudiodecoder.c
 +++ b/gst-libs/gst/audio/gstaudiodecoder.c
 @@ -1498,13 +1498,13 @@ gst_audio_decoder_push_buffers (GstAudioDecoder * dec, gboolean force)
@@ -23,8 +24,8 @@ index be46015..61c2158 100755
            priv->sync_flush += offset;
 -          if (priv->sync_flush > GST_AUDIO_DECODER_MAX_SYNC)
 -            goto parse_failed;
-+//           if (priv->sync_flush > GST_AUDIO_DECODER_MAX_SYNC)
-+//             goto parse_failed;
++          //if (priv->sync_flush > GST_AUDIO_DECODER_MAX_SYNC)
++          //  goto parse_failed;
          }
  
          if (ret == GST_FLOW_EOS) {
