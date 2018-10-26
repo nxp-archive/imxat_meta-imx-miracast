@@ -11,7 +11,7 @@ WIRELESS_IMAGE_INSTALL = " \
     wpa-supplicant \
     tcpdump \
     wfd-sink \
-    wfd-sink-qt \
+    wfd-sink-player-qt \
     linux-firmware-ath9k \
 "
 

@@ -7,16 +7,14 @@ PV = "2.25"
 SRC_URI += "git://git@bitbucket.sw.nxp.com/mss/wfd_stack_miracast.git;protocol=ssh;branch=wfd_sink_integration_v2"
 
 #The revision of the source code used to build the package
-SRCREV = "6501258d4a6cb67d916527c6cabb29255d52f031"
+SRCREV = "e9fa5cbd871ed0d0603436fd4f1f22cd6aaeedcc"
 
 # Causes tarballs of the Git repositories, including the Git metadata, to be placed in the DL_DIR directory
 BB_GENERATE_MIRROR_TARBALLS = "1"
 
 SRC_URI += " file://0001-HDCP-Disable-HDCP-support-from-the-sink.patch \
-             file://0002-wfd_manager-enable-automatic-screen-connection-by-de.patch \
 "
 
-DEPENDS += "wfd-sink-qt"
 inherit autotools pkgconfig
 
 S = "${WORKDIR}/git"
