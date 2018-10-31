@@ -19,6 +19,10 @@ TEST_TOOLS_INSTALL = " \
 # Gstreamer plugins needed in case we use Gstreamer to handle MPEGTS stream
 GSTREAMER_INSTALL = " \
     packagegroup-fsl-gstreamer1.0 \
+    gstreamer1.0-plugins-bad-mpegtsdemux gstreamer1.0-plugins-bad-videoparsersbad \
+    gstreamer1.0-plugins-bad-faad \
+    gstreamer1.0-plugins-ugly-dvdlpcmdec \
+    imx-gst1.0-plugin \
 "
 
 WIRELESS_IMAGE_INSTALL = " \
