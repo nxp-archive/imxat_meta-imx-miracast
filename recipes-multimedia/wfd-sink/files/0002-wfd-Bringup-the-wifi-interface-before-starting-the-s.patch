@@ -1,0 +1,34 @@
+From 41c54b2ba49086af7c476e5ffa9feef255f7bf41 Mon Sep 17 00:00:00 2001
+From: Matthieu Vanin <matthieu.vanin@nxp.com>
+Date: Fri, 26 Oct 2018 09:20:20 -0400
+Subject: [PATCH 2/2] wfd: Bringup the wifi interface before starting the stack
+
+Bringup the wifi interface before starting the stack if the interface is down
+
+Signed-off-by: Matthieu Vanin <matthieu.vanin@nxp.com>
+---
+ wfd.sh | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/wfd.sh b/wfd.sh
+index fb90a5d..11c4c83 100755
+--- a/wfd.sh
++++ b/wfd.sh
+@@ -35,6 +35,14 @@ start_function() {
+ 
+     export PATH=$PWD:$PATH
+ 
++    ifconfig | grep $IFACE
++
++    # WLAN interface is down, bring it up
++    if [ $? -ne 0 ];then
++        ifup $IFACE
++        sleep 2
++    fi
++
+     # --- Increase mximum allowed network Kernel buffers size
+     # Keep old values
+     cat /proc/sys/net/core/rmem_max > /tmp/rmem_max
+-- 
+1.9.1
+

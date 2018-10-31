@@ -67,6 +67,7 @@ do_uninstall () {
     rm -f ${D}${bindir}/p2p_connect.sh
     rm -f ${D}${bindir}/rtsp.sh
     rm -f ${D}${bindir}/uibc.sh
+    rm -f ${D}${bindir}/wfd_player.sh
     rm -f ${D}${sysconfdir}/init.d/wfd.sh
 
     # Remove wfd libraries and links
