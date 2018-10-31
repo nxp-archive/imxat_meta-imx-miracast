@@ -6,14 +6,17 @@ LICENSE = "CLOSED"
 
 FILES_${PN} = "${bindir} ${sysconfdir} ${datadir}"
 
-PV = "2.25"
+PV = "2.26"
+
+# Causes tarballs of the Git repositories, including the Git metadata, to be placed in the DL_DIR directory
+BB_GENERATE_MIRROR_TARBALLS = "1"
 
 # BitBake uses the SRC_URI variable to point to source files regardless of their location.
 # Each recipe must have a SRC_URI variable that points to the source.
 SRC_URI += "git://git@bitbucket.sw.nxp.com/mss/wfd_sink_player_qt.git;protocol=ssh;branch=master"
 
 # The revision of the source code used to build the package
-SRCREV = "c87d09e00d87010041cb282531c232fd863366f9"
+SRCREV = "e1236f5a892d34bec7729c29e7367f319d1a8e76"
 
 WFD_CONF_DIR_imx6qsabreauto = "wfd-sink_imx6sabreauto_conf"
 WFD_CONF_DIR_imx6qsabresd = "wfd-sink_imx6sabresd_conf"
