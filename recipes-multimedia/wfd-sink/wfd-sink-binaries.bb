@@ -1,11 +1,11 @@
 require wfd-sink.inc
 
-PV = "2.25"
+PV = "2.26"
 
 SRC_URI += "file://${PN}_${PV}.tar.gz"
 
-SRC_URI[md5sum] = "76772c80ed929bdc6ab104c6e0266f74"
-SRC_URI[sha256sum] = "803f508a3c1835e607056a368a5b4d065db63bd833059aaa01f0d5fa489a470b"
+SRC_URI[md5sum] = "65528c070bb8b60cec55ab4e9a080e09"
+SRC_URI[sha256sum] = "53090a8eebc8966d3a8bd819ce8486ee500c234f743548d60d22536f178de806"
 
 S = "${WORKDIR}/${PN}_${PV}"
 
