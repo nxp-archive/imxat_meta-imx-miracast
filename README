@@ -7,7 +7,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 Prerequisites
 --------------
-This Miracast meta-layer should be applied on top of the NXP fsl-yocto-L4.1.15_2.0.0-ga release
+This Miracast meta-layer should be applied on top of the NXP fsl-yocto-L4.1.15_2.x.x-ga release
 See corresponding i.MX_Yocto_Project_User's_Guide.pdf for Yocto Project Installation
 
 Miracast WFD Sink Stack Building & Installing
@@ -50,14 +50,32 @@ This will mark to Yocto Project that the package has been fetched.
     $ touch wfd-sink_<version>.tar.gz.done
 
 **REQUIRED IN CASE YOU USE A PREBUILT WFD SINK BINARY ARCHIVE**
-- Copy the wfd-sink (Miracast) binaries "wfd-sink-binaries_<version>.tar.gz" to your source/meta-imx-miracast/recipes-multimedia/wfd-sink/files directory
+- Copy the released wfd-sink binaries “wfd-sink-binaries_<version>.tar.gz” to your
+<Your_Build_Directory>/../sources/meta-imx-miracast/recipes-multimedia/wfd-sink/files directory.
+
+- Copy the provided wfd_sink_player_qt sources
+(git2_bitbucket.sw.nxp.com.mss.wfd_sink_player_qt.git.tar.gz) to your downloads directory.
+By default, the downloads directory exists at the same level as sources directory.
+This will only exist if a build has been started.
+For a clean system, create the downloads directory before copying the packages.
+The downloads directory can also be specified by the DL_DIR in the <Your_Build_Directory>/conf/local.conf.
+
+-create the package .done file in the downloads directory. This will mark to Yocto that the package
+has been correctly fetched.
+    $ touch git2_bitbucket.sw.nxp.com.mss.wfd_sink_player_qt.git.tar.gz.done
 
 Step 4:
-Build the Miracast demo image from WFD sources
+Build the Miracast demo image from WFD sources (With Qt UI/Player)
     $ bitbake egl-imx-miracast-qt5
 
-Build the Miracast demo image from WFD binaries
+Build the Miracast demo image from WFD binaries (With Qt UI/Player)
     $ bitbake egl-imx-miracast-qt5-bin
+
+Build the Miracast demo image from WFD sources without UI/Player
+    $ bitbake egl-imx-miracast
+
+Build the Miracast demo image from WFD binaries without UI/Player
+    $ bitbake egl-imx-miracast-bin
 
 Deployment
 --------------
